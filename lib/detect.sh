@@ -22,7 +22,11 @@ VARIANTS_CACHE_FILE=""
 
 get_bootc_status() {
     if [[ -n "${MOCK_BOOTC:-}" ]]; then
-        echo '{"status":{"booted":{"image":{"name":"'"$MOCK_BOOTC"'","tag":"stable"}}}}'
+        local tag="stable"
+        if [[ "$MOCK_BOOTC" == *":"* ]]; then
+            tag="${MOCK_BOOTC##*:}"
+        fi
+        echo "{\"status\":{\"booted\":{\"image\":{\"name\":\"$MOCK_BOOTC\",\"tag\":\"$tag\"}}}}"
         return
     fi
     

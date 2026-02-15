@@ -78,14 +78,12 @@ parse_images() {
     while IFS= read -r line; do
         if [[ "$line" =~ \[bluefin([^\]]*)\]=bluefin([^\]]*) ]]; then
             local src="${BASH_REMATCH[1]}"
-            local dst="${BASH_REMATCH[2]}"
             if [[ -n "$src" ]]; then
                 images+=("bluefin$src")
             fi
         fi
         if [[ "$line" =~ \[aurora([^\]]*)\]=aurora([^\]]*) ]]; then
             local src="${BASH_REMATCH[1]}"
-            local dst="${BASH_REMATCH[2]}"
             if [[ -n "$src" ]]; then
                 images+=("aurora$src")
             fi
@@ -101,9 +99,12 @@ parse_images() {
 
 build_image_list() {
     local family="$1"
-    local flavors="$2"
-    local tags="$3"
-    local base_images="$4"
+    shift
+    local flavors_str="$1"
+    shift
+    local tags_str="$1"
+    shift
+    local base_images_str="$1"
     
     local images=()
     
@@ -125,9 +126,9 @@ build_image_list() {
             while IFS= read -r tag; do
                 [[ -z "$tag" ]] && continue
                 images+=("ghcr.io/ublue-os/${image_name}:${tag}")
-            done <<< "$tags"
-        done <<< "$flavors"
-    done <<< "$base_images"
+            done <<< "$tags_str"
+        done <<< "$flavors_str"
+    done <<< "$base_images_str"
     
     printf '%s\n' "${images[@]}" | sort -u
 }

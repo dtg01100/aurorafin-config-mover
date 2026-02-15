@@ -1,0 +1,7 @@
+# shellcheck configuration
+
+# Source paths are dynamic - we source from computed paths
+disable=SC1091
+
+# Some variables are used externally via sourcing
+disable=SC2034
