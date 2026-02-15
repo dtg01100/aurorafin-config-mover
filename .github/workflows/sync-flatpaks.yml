@@ -37,7 +37,11 @@ jobs:
           gh pr create \
             --title "chore: update flatpak snapshots" \
             --body "The upstream flatpak lists have changed. This PR updates the local snapshots.\n\nReview the diff to see what flatpaks were added or removed." \
-            --base main
+            --base main \
+            --label "automated"
+          
+          # Enable auto-merge when CI passes
+          gh pr merge --auto --squash
       
       - name: Alert on failure
         if: steps.sync.outputs.failed == 'true'

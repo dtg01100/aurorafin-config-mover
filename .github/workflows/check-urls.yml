@@ -137,10 +137,14 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git add lib/flatpaks.sh
-          git commit -m "fix: update Brewfile URLs to new locations"
+          git commit -m "fix: update Brewfile URLs"
           git push origin HEAD
           
           gh pr create \
             --title "fix: update Brewfile URLs" \
             --body "Auto-detected new locations for the flatpak Brewfiles. The new URLs were validated to contain flatpak entries. This PR was automatically generated." \
-            --base main
+            --base main \
+            --label "automated"
+          
+          # Enable auto-merge when CI passes
+          gh pr merge --auto --squash
