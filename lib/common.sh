@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_VERSION="1.0.0"
-SCRIPT_NAME="bluefin-aurora-migrate"
+SCRIPT_NAME="bluefin-aurora-migrate"  # Used in help output
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'

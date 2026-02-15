@@ -1,0 +1,146 @@
+name: Check Flatpak URLs
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'lib/flatpaks.sh'
+      - 'scripts/check-urls.sh'
+
+jobs:
+  check-urls:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    
+    outputs:
+      needs_fix: ${{ steps.check.outputs.needs_fix }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Check Brewfile URLs
+        id: check
+        run: |
+          chmod +x scripts/check-urls.sh
+          ./scripts/check-urls.sh
+        continue-on-error: true
+      
+      - name: Create issue if fix needed
+        if: steps.check.outputs.failed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "Brewfile URLs need updating" \
+            --body "## Summary\n\nThe flatpak Brewfile URLs are no longer accessible.\n\n### Details\n\n- [ ] Bluefin Brewfile URL\n- [ ] Aurora Brewfile URL\n\n### Action Required\n\n1. Find the new locations in:\n   - https://github.com/projectbluefin/common\n   - https://github.com/get-aurora-dev/common\n\n2. Update the URLs in \`lib/flatpaks.sh\`\n\n### Copilot\n\n@copilot Please investigate and fix this issue by finding the correct Brewfile URLs." \
+            --label "maintenance,automated"
+
+  copilot-fix:
+    needs: check-urls
+    if: needs.check-urls.outputs.needs_fix == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: Create branch for Copilot
+        run: |
+          git checkout -b copilot/fix-brewfile-urls-$(date +%Y%m%d-%H%M%S)
+      
+      - name: Search for new Brewfile locations
+        id: search
+        run: |
+          echo "Searching for Bluefin Brewfile..."
+          BLUEFIN_FOUND=false
+          
+          for path in \
+            "main/system_files/bluefin/usr/share/ublue-os/homebrew/system-flatpaks.Brewfile" \
+            "main/system_files/usr/share/ublue-os/homebrew/system-flatpaks.Brewfile"
+          do
+            url="https://raw.githubusercontent.com/projectbluefin/common/$path"
+            if curl -sL -o /dev/null -w "%{http_code}" "$url" | grep -q "200"; then
+              echo "Found Bluefin: $url"
+              echo "BLUEFIN_URL=$url" >> $GITHUB_OUTPUT
+              BLUEFIN_FOUND=true
+              break
+            fi
+          done
+          
+          echo "Searching for Aurora Brewfile..."
+          AURORA_FOUND=false
+          
+          for path in \
+            "main/system_files/shared/usr/share/ublue-os/homebrew/system-flatpaks.Brewfile" \
+            "main/system_files/usr/share/ublue-os/homebrew/system-flatpaks.Brewfile"
+          do
+            url="https://raw.githubusercontent.com/get-aurora-dev/common/$path"
+            if curl -sL -o /dev/null -w "%{http_code}" "$url" | grep -q "200"; then
+              echo "Found Aurora: $url"
+              echo "AURORA_URL=$url" >> $GITHUB_OUTPUT
+              AURORA_FOUND=true
+              break
+            fi
+          done
+          
+          if [[ "$BLUEFIN_FOUND" == "true" && "$AURORA_FOUND" == "true" ]]; then
+            echo "all_found=true" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Update URLs in flatpaks.sh
+        if: steps.search.outputs.all_found == 'true'
+        run: |
+          sed -i "s|^BLUEFIN_BREWFILE_URL=.*|BLUEFIN_BREWFILE_URL=\"${{ steps.search.outputs.BLUEFIN_URL }}\"|" lib/flatpaks.sh
+          sed -i "s|^AURORA_BREWFILE_URL=.*|AURORA_BREWFILE_URL=\"${{ steps.search.outputs.AURORA_URL }}\"|" lib/flatpaks.sh
+          
+          echo "Updated URLs:"
+          grep "BREWFILE_URL=" lib/flatpaks.sh
+      
+      - name: Verify update
+        if: steps.search.outputs.all_found == 'true'
+        run: |
+          source lib/flatpaks.sh
+          
+          echo "Testing Bluefin URL..."
+          if curl -sL "$BLUEFIN_BREWFILE_URL" | grep -q "flatpak"; then
+            echo "✓ Bluefin URL valid"
+          else
+            echo "✗ Bluefin URL invalid"
+            exit 1
+          fi
+          
+          echo "Testing Aurora URL..."
+          if curl -sL "$AURORA_BREWFILE_URL" | grep -q "flatpak"; then
+            echo "✓ Aurora URL valid"
+          else
+            echo "✗ Aurora URL invalid"
+            exit 1
+          fi
+      
+      - name: Create PR with fix
+        if: steps.search.outputs.all_found == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git add lib/flatpaks.sh
+          git commit -m "fix: update Brewfile URLs to new locations"
+          git push origin HEAD
+          
+          gh pr create \
+            --title "fix: update Brewfile URLs" \
+            --body "Auto-detected new locations for the flatpak Brewfiles. The new URLs were validated to contain flatpak entries. This PR was automatically generated." \
+            --base main
