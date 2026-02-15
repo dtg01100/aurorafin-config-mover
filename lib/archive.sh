@@ -157,6 +157,11 @@ generate_rollback_script() {
     local source_image="$2"
     local rollback_script="$backup_dir/rollback.sh"
     
+    if [[ "$DRY_RUN" == "true" ]]; then
+        echo -e "${YELLOW}[DRY-RUN]${RESET} Would create rollback script: $rollback_script"
+        return 0
+    fi
+    
     cat > "$rollback_script" << 'ROLLBACK_SCRIPT'
 #!/bin/bash
 set -euo pipefail
@@ -223,6 +228,11 @@ generate_restore_script() {
     local backup_dir="$1"
     local restore_script="$backup_dir/restore-configs.sh"
     
+    if [[ "$DRY_RUN" == "true" ]]; then
+        echo -e "${YELLOW}[DRY-RUN]${RESET} Would create restore script: $restore_script"
+        return 0
+    fi
+    
     cat > "$restore_script" << 'RESTORE_SCRIPT'
 #!/bin/bash
 set -euo pipefail
@@ -278,6 +288,11 @@ copy_post_migrate_script() {
     script_dir=$(get_script_dir)
     local post_script="$script_dir/../migrate-post.sh"
     
+    if [[ "$DRY_RUN" == "true" ]]; then
+        echo -e "${YELLOW}[DRY-RUN]${RESET} Would copy post-migration script to: $backup_dir/migrate-post.sh"
+        return 0
+    fi
+    
     if [[ -f "$post_script" ]]; then
         cp "$post_script" "$backup_dir/migrate-post.sh"
         chmod +x "$backup_dir/migrate-post.sh"
@@ -287,6 +302,11 @@ copy_post_migrate_script() {
 
 write_migration_metadata() {
     local backup_dir="$1"
+    
+    if [[ "$DRY_RUN" == "true" ]]; then
+        echo -e "${YELLOW}[DRY-RUN]${RESET} Would write metadata to: $backup_dir/metadata/"
+        return 0
+    fi
     
     echo "$SOURCE_FAMILY" > "$backup_dir/metadata/previous-family.txt"
     echo "$SOURCE_DE" > "$backup_dir/metadata/previous-de.txt"

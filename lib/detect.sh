@@ -13,25 +13,50 @@ TARGET_DE=""
 TARGET_VARIANT=""
 TARGET_TAG=""
 
-DESKTOP_MAP=(
+declare -A DESKTOP_MAP=(
     ["bluefin"]="gnome"
     ["aurora"]="kde"
 )
 
-VARIANT_MAP=(
+declare -A VARIANT_MAP=(
     ["dx"]="developer edition"
     ["nvidia"]="nvidia drivers"
     ["nvidia-open"]="nvidia open drivers"
     ["asus"]="asus hardware"
-    [""]="standard"
 )
 
 get_bootc_status() {
-    if command -v bootc &>/dev/null; then
-        bootc status --json 2>/dev/null || echo "{}"
-    else
-        echo "{}"
+    if [[ -n "${MOCK_BOOTC:-}" ]]; then
+        echo '{"status":{"booted":{"image":{"name":"'"$MOCK_BOOTC"'","tag":"stable"}}}}'
+        return
     fi
+    
+    local bootc_output=""
+    
+    if command -v bootc &>/dev/null; then
+        bootc_output=$(bootc status --json 2>/dev/null || echo "")
+    fi
+    
+    if [[ -n "$bootc_output" && "$bootc_output" != "{}" ]]; then
+        echo "$bootc_output"
+        return
+    fi
+    
+    if command -v rpm-ostree &>/dev/null; then
+        local booted_image
+        booted_image=$(rpm-ostree status --json 2>/dev/null | jq -r '.deployments[0]["container-image-reference"] // empty' | sed 's|^ostree-image-signed:docker://||')
+        
+        if [[ -n "$booted_image" ]]; then
+            local tag="stable"
+            if [[ "$booted_image" == *":"* ]]; then
+                tag="${booted_image##*:}"
+            fi
+            echo "{\"status\":{\"booted\":{\"image\":{\"name\":\"$booted_image\",\"tag\":\"$tag\"}}}}"
+            return
+        fi
+    fi
+    
+    echo "{}"
 }
 
 detect_current_image() {
