@@ -61,25 +61,39 @@ compare_with_previous() {
     fi
     
     local old_flatpaks
-    old_flatpaks=$(grep -v '^#' "$snapshot_file" | grep -v '^$' | sort -u)
+    old_flatpaks=$(grep -v '^#' "$snapshot_file" | grep -v '^$')
     
-    local added removed
+    local added=()
+    local removed=()
     
-    added=$(comm -13 <(echo "$old_flatpaks") <(echo "$new_flatpaks"))
-    removed=$(comm -23 <(echo "$old_flatpaks") <(echo "$new_flatpaks"))
+    # Check for added flatpaks
+    while IFS= read -r app; do
+        [[ -z "$app" ]] && continue
+        if ! echo "$old_flatpaks" | grep -qF "$app"; then
+            added+=("$app")
+        fi
+    done <<< "$new_flatpaks"
     
-    if [[ -n "$added" || -n "$removed" ]]; then
+    # Check for removed flatpaks
+    while IFS= read -r app; do
+        [[ -z "$app" ]] && continue
+        if ! echo "$new_flatpaks" | grep -qF "$app"; then
+            removed+=("$app")
+        fi
+    done <<< "$old_flatpaks"
+    
+    if [[ ${#added[@]} -gt 0 || ${#removed[@]} -gt 0 ]]; then
         echo ""
         echo "Changes detected for $de:"
-        if [[ -n "$added" ]]; then
+        if [[ ${#added[@]} -gt 0 ]]; then
             echo "  Added:"
-            echo "$added" | while read -r app; do
+            for app in "${added[@]}"; do
                 echo "    + $app"
             done
         fi
-        if [[ -n "$removed" ]]; then
+        if [[ ${#removed[@]} -gt 0 ]]; then
             echo "  Removed:"
-            echo "$removed" | while read -r app; do
+            for app in "${removed[@]}"; do
                 echo "    - $app"
             done
         fi
