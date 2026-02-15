@@ -257,6 +257,8 @@ main() {
     
     check_dependencies
     
+    display_unsupported_warning
+    
     if [[ -n "$RESTORE_DIR" ]]; then
         do_restore "$RESTORE_DIR"
         exit 0

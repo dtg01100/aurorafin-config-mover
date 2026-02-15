@@ -121,6 +121,35 @@ check_dependencies() {
     fi
 }
 
+display_unsupported_warning() {
+    local acknowledged=false
+    
+    while [[ "$acknowledged" == "false" ]]; do
+        echo ""
+        warn "WARNING: UNSUPPORTED TOOL"
+        echo ""
+        echo -e "This tool is not affiliated with, endorsed by, or supported by either the"
+        echo -e "${BOLD}Bluefin${RESET} or ${BOLD}Aurora${RESET} projects. It is a community-made utility and comes with"
+        echo -e "no guarantees."
+        echo ""
+        echo -e "Please acknowledge that you understand this is unsupported:"
+        echo -en "Type ${GREEN}\"yes\"${RESET} to continue: "
+        read -r response
+        
+        case "${response,,}" in
+            yes)
+                acknowledged=true
+                info "Acknowledged. Continuing..."
+                ;;
+            *)
+                echo ""
+                warn "You must type 'yes' to acknowledge this warning."
+                echo ""
+                ;;
+        esac
+    done
+}
+
 run_cmd() {
     local cmd="$*"
     

@@ -106,6 +106,8 @@ main() {
     
     check_dependencies
     
+    display_unsupported_warning
+    
     info "Detecting current system..."
     detect_current_image
     
