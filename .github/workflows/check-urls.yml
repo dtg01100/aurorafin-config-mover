@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: '0 6 * * 1'
   workflow_dispatch:
+    inputs:
+      force_fail:
+        description: 'Force URL check to fail for testing'
+        required: false
+        default: 'false'
+        type: boolean
   pull_request:
     paths:
       - 'lib/flatpaks.sh'
@@ -19,6 +25,8 @@ jobs:
     
     outputs:
       needs_fix: ${{ steps.check.outputs.needs_fix }}
+      bluefin_url: ${{ steps.check.outputs.bluefin_url }}
+      aurora_url: ${{ steps.check.outputs.aurora_url }}
     
     steps:
       - name: Checkout
@@ -26,8 +34,18 @@ jobs:
       
       - name: Check Brewfile URLs
         id: check
+        env:
+          FORCE_FAIL: ${{ inputs.force_fail }}
         run: |
           chmod +x scripts/check-urls.sh
+          
+          if [[ "$FORCE_FAIL" == "true" ]]; then
+            echo "Test mode: forcing URL check to fail"
+            echo "failed=true" >> $GITHUB_OUTPUT
+            echo "needs_fix=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
           ./scripts/check-urls.sh
         continue-on-error: true
       
@@ -36,9 +54,33 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          BODY=$(cat << 'EOF'
+          ## Summary
+          
+          The flatpak Brewfile URLs are no longer accessible.
+          
+          ### Details
+          
+          - [ ] Bluefin Brewfile URL
+          - [ ] Aurora Brewfile URL
+          
+          ### Action Required
+          
+          1. Find the new locations in:
+             - https://github.com/projectbluefin/common
+             - https://github.com/get-aurora-dev/common
+          
+          2. Update the URLs in `lib/flatpaks.sh`
+          
+          ### Copilot
+          
+          Please investigate and fix this issue by finding the correct Brewfile URLs.
+          EOF
+          )
+          
           gh issue create \
             --title "Brewfile URLs need updating" \
-            --body "## Summary\n\nThe flatpak Brewfile URLs are no longer accessible.\n\n### Details\n\n- [ ] Bluefin Brewfile URL\n- [ ] Aurora Brewfile URL\n\n### Action Required\n\n1. Find the new locations in:\n   - https://github.com/projectbluefin/common\n   - https://github.com/get-aurora-dev/common\n\n2. Update the URLs in \`lib/flatpaks.sh\`\n\n### Copilot\n\n@copilot Please investigate and fix this issue by finding the correct Brewfile URLs." \
+            --body "$BODY" \
             --label "maintenance,automated"
 
   copilot-fix:
@@ -58,9 +100,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
       
-      - name: Create branch for Copilot
+      - name: Create branch for fix
         run: |
-          git checkout -b copilot/fix-brewfile-urls-$(date +%Y%m%d-%H%M%S)
+          git checkout -b fix/brewfile-urls-$(date +%Y%m%d-%H%M%S)
       
       - name: Search for new Brewfile locations
         id: search
@@ -75,7 +117,7 @@ jobs:
             url="https://raw.githubusercontent.com/projectbluefin/common/$path"
             if curl -sL -o /dev/null -w "%{http_code}" "$url" | grep -q "200"; then
               echo "Found Bluefin: $url"
-              echo "BLUEFIN_URL=$url" >> $GITHUB_OUTPUT
+              echo "bluefin_url=$url" >> $GITHUB_OUTPUT
               BLUEFIN_FOUND=true
               break
             fi
@@ -91,7 +133,7 @@ jobs:
             url="https://raw.githubusercontent.com/get-aurora-dev/common/$path"
             if curl -sL -o /dev/null -w "%{http_code}" "$url" | grep -q "200"; then
               echo "Found Aurora: $url"
-              echo "AURORA_URL=$url" >> $GITHUB_OUTPUT
+              echo "aurora_url=$url" >> $GITHUB_OUTPUT
               AURORA_FOUND=true
               break
             fi
@@ -104,8 +146,8 @@ jobs:
       - name: Update URLs in flatpaks.sh
         if: steps.search.outputs.all_found == 'true'
         run: |
-          sed -i "s|^BLUEFIN_BREWFILE_URL=.*|BLUEFIN_BREWFILE_URL=\"${{ steps.search.outputs.BLUEFIN_URL }}\"|" lib/flatpaks.sh
-          sed -i "s|^AURORA_BREWFILE_URL=.*|AURORA_BREWFILE_URL=\"${{ steps.search.outputs.AURORA_URL }}\"|" lib/flatpaks.sh
+          sed -i "s|^BLUEFIN_BREWFILE_URL=.*|BLUEFIN_BREWFILE_URL=\"${{ steps.search.outputs.bluefin_url }}\"|" lib/flatpaks.sh
+          sed -i "s|^AURORA_BREWFILE_URL=.*|AURORA_BREWFILE_URL=\"${{ steps.search.outputs.aurora_url }}\"|" lib/flatpaks.sh
           
           echo "Updated URLs:"
           grep "BREWFILE_URL=" lib/flatpaks.sh
@@ -117,17 +159,17 @@ jobs:
           
           echo "Testing Bluefin URL..."
           if curl -sL "$BLUEFIN_BREWFILE_URL" | grep -q "flatpak"; then
-            echo "✓ Bluefin URL valid"
+            echo "Bluefin URL valid"
           else
-            echo "✗ Bluefin URL invalid"
+            echo "Bluefin URL invalid"
             exit 1
           fi
           
           echo "Testing Aurora URL..."
           if curl -sL "$AURORA_BREWFILE_URL" | grep -q "flatpak"; then
-            echo "✓ Aurora URL valid"
+            echo "Aurora URL valid"
           else
-            echo "✗ Aurora URL invalid"
+            echo "Aurora URL invalid"
             exit 1
           fi
       
