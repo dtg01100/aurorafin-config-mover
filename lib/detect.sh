@@ -1,0 +1,270 @@
+#!/bin/bash
+set -euo pipefail
+
+SOURCE_IMAGE=""
+SOURCE_FAMILY=""
+SOURCE_DE=""
+SOURCE_VARIANT=""
+SOURCE_TAG=""
+
+TARGET_IMAGE=""
+TARGET_FAMILY=""
+TARGET_DE=""
+TARGET_VARIANT=""
+TARGET_TAG=""
+
+DESKTOP_MAP=(
+    ["bluefin"]="gnome"
+    ["aurora"]="kde"
+)
+
+VARIANT_MAP=(
+    ["dx"]="developer edition"
+    ["nvidia"]="nvidia drivers"
+    ["nvidia-open"]="nvidia open drivers"
+    ["asus"]="asus hardware"
+    [""]="standard"
+)
+
+get_bootc_status() {
+    if command -v bootc &>/dev/null; then
+        bootc status --json 2>/dev/null || echo "{}"
+    else
+        echo "{}"
+    fi
+}
+
+detect_current_image() {
+    local status
+    status=$(get_bootc_status)
+    
+    SOURCE_IMAGE=$(echo "$status" | jq -r '.status.booted.image.name // empty')
+    
+    if [[ -z "$SOURCE_IMAGE" ]]; then
+        error "Could not detect current image. Are you running on Bluefin or Aurora?"
+    fi
+    
+    local image_name
+    image_name=$(basename "$SOURCE_IMAGE")
+    
+    if [[ "$SOURCE_IMAGE" == *"bluefin"* ]]; then
+        SOURCE_FAMILY="bluefin"
+        SOURCE_DE="gnome"
+    elif [[ "$SOURCE_IMAGE" == *"aurora"* ]]; then
+        SOURCE_FAMILY="aurora"
+        SOURCE_DE="kde"
+    else
+        error "Unknown image family: $SOURCE_IMAGE"
+    fi
+    
+    if [[ "$SOURCE_IMAGE" == *"-dx"* ]]; then
+        SOURCE_VARIANT="dx"
+    elif [[ "$SOURCE_IMAGE" == *"-nvidia-open"* ]]; then
+        SOURCE_VARIANT="nvidia-open"
+    elif [[ "$SOURCE_IMAGE" == *"-nvidia"* ]]; then
+        SOURCE_VARIANT="nvidia"
+    elif [[ "$SOURCE_IMAGE" == *"-asus"* ]]; then
+        SOURCE_VARIANT="asus"
+    else
+        SOURCE_VARIANT=""
+    fi
+    
+    SOURCE_TAG=$(echo "$status" | jq -r '.status.booted.image.tag // "stable"')
+    if [[ -z "$SOURCE_TAG" ]]; then
+        SOURCE_TAG="stable"
+    fi
+    
+    debug "Detected: $SOURCE_FAMILY ($SOURCE_DE), variant=$SOURCE_VARIANT, tag=$SOURCE_TAG"
+}
+
+get_target_family() {
+    case "$SOURCE_FAMILY" in
+        bluefin) echo "aurora" ;;
+        aurora)  echo "bluefin" ;;
+        *)       echo "" ;;
+    esac
+}
+
+get_target_de() {
+    case "$SOURCE_DE" in
+        gnome) echo "kde" ;;
+        kde)   echo "gnome" ;;
+        *)     echo "" ;;
+    esac
+}
+
+build_target_image() {
+    local family="$1"
+    local variant="$2"
+    local tag="$3"
+    
+    local image="ghcr.io/ublue-os/${family}"
+    
+    if [[ -n "$variant" ]]; then
+        image="${image}-${variant}"
+    fi
+    
+    if [[ -n "$tag" ]]; then
+        image="${image}:${tag}"
+    fi
+    
+    echo "$image"
+}
+
+get_available_targets() {
+    local current_family="$1"
+    local current_variant="$2"
+    local current_tag="$3"
+    
+    local target_family
+    target_family=$(get_target_family)
+    
+    local targets=()
+    
+    targets+=("${target_family}-${current_variant:-standard}:${current_tag}")
+    
+    if [[ -n "$current_variant" && "$current_variant" != "dx" ]]; then
+        targets+=("${target_family}:${current_tag}")
+    fi
+    
+    if [[ "$current_tag" != "stable" ]]; then
+        targets+=("${target_family}-${current_variant:-standard}:stable")
+    fi
+    
+    if [[ "$current_tag" != "latest" ]]; then
+        targets+=("${target_family}-${current_variant:-standard}:latest")
+    fi
+    
+    if [[ -n "$current_variant" && "$current_variant" != "nvidia" ]]; then
+        targets+=("${target_family}-nvidia:${current_tag}")
+    fi
+    
+    if [[ -n "$current_variant" && "$current_variant" != "nvidia-open" ]]; then
+        targets+=("${target_family}-nvidia-open:${current_tag}")
+    fi
+    
+    printf '%s\n' "${targets[@]}" | sort -u
+}
+
+display_image_menu() {
+    local targets
+    mapfile -t targets < <(get_available_targets "$SOURCE_FAMILY" "$SOURCE_VARIANT" "$SOURCE_TAG")
+    
+    print_header "MIGRATION TARGET SELECTION"
+    
+    echo -e "Current: ${BOLD}${SOURCE_IMAGE}${RESET}"
+    echo ""
+    echo "Available targets:"
+    echo ""
+    
+    local i=1
+    local recommended=""
+    
+    for target in "${targets[@]}"; do
+        if [[ "$target" == *"${SOURCE_VARIANT:-standard}"* && "$target" == *":${SOURCE_TAG}" ]]; then
+            recommended=" (Recommended - matches your variant)"
+        else
+            recommended=""
+        fi
+        
+        echo -e "  ${BOLD}$i${RESET}. ${target}${recommended}"
+        ((i++))
+    done
+    
+    echo ""
+    read -rp "Select target [1-$((i-1))]: " selection
+    
+    if [[ "$selection" =~ ^[0-9]+$ ]] && [[ "$selection" -ge 1 ]] && [[ "$selection" -le ${#targets[@]} ]]; then
+        TARGET_IMAGE="${targets[$((selection-1))]}"
+    else
+        error "Invalid selection: $selection"
+    fi
+    
+    parse_target_image
+}
+
+parse_target_image() {
+    local image_name
+    image_name=$(basename "$TARGET_IMAGE")
+    
+    if [[ "$TARGET_IMAGE" == *"bluefin"* ]]; then
+        TARGET_FAMILY="bluefin"
+        TARGET_DE="gnome"
+    elif [[ "$TARGET_IMAGE" == *"aurora"* ]]; then
+        TARGET_FAMILY="aurora"
+        TARGET_DE="kde"
+    else
+        error "Unknown target image family: $TARGET_IMAGE"
+    fi
+    
+    if [[ "$TARGET_IMAGE" == *"-dx"* ]]; then
+        TARGET_VARIANT="dx"
+    elif [[ "$TARGET_IMAGE" == *"-nvidia-open"* ]]; then
+        TARGET_VARIANT="nvidia-open"
+    elif [[ "$TARGET_IMAGE" == *"-nvidia"* ]]; then
+        TARGET_VARIANT="nvidia"
+    elif [[ "$TARGET_IMAGE" == *"-asus"* ]]; then
+        TARGET_VARIANT="asus"
+    else
+        TARGET_VARIANT=""
+    fi
+    
+    if [[ "$TARGET_IMAGE" == *":"* ]]; then
+        TARGET_TAG="${TARGET_IMAGE##*:}"
+    else
+        TARGET_TAG="stable"
+    fi
+    
+    debug "Target: $TARGET_FAMILY ($TARGET_DE), variant=$TARGET_VARIANT, tag=$TARGET_TAG"
+}
+
+is_bluefin() {
+    [[ "$SOURCE_FAMILY" == "bluefin" ]]
+}
+
+is_aurora() {
+    [[ "$SOURCE_FAMILY" == "aurora" ]]
+}
+
+is_gnome() {
+    [[ "$SOURCE_DE" == "gnome" ]]
+}
+
+is_kde() {
+    [[ "$SOURCE_DE" == "kde" ]]
+}
+
+migrating_to_gnome() {
+    [[ "$TARGET_DE" == "gnome" ]]
+}
+
+migrating_to_kde() {
+    [[ "$TARGET_DE" == "kde" ]]
+}
+
+get_display_manager() {
+    case "$1" in
+        gnome) echo "gdm" ;;
+        kde)   echo "sddm" ;;
+        *)     echo "" ;;
+    esac
+}
+
+print_migration_summary() {
+    print_header "MIGRATION SUMMARY"
+    
+    echo -e "  ${BOLD}Source:${RESET}      $SOURCE_FAMILY ($SOURCE_DE)"
+    echo -e "  ${BOLD}Source Image:${RESET} $SOURCE_IMAGE"
+    echo ""
+    echo -e "  ${BOLD}Target:${RESET}      $TARGET_FAMILY ($TARGET_DE)"
+    echo -e "  ${BOLD}Target Image:${RESET} $TARGET_IMAGE"
+    echo ""
+    
+    if migrating_to_kde; then
+        echo -e "${YELLOW}⚠ WARNING: Switching to KDE will reset GNOME-specific settings.${RESET}"
+        echo -e "  Your Flatpaks, Homebrew, and user data will be preserved."
+    elif migrating_to_gnome; then
+        echo -e "${YELLOW}⚠ WARNING: Switching to GNOME will reset KDE-specific settings.${RESET}"
+        echo -e "  Your Flatpaks, Homebrew, and user data will be preserved."
+    fi
+}

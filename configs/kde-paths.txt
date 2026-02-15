@@ -1,0 +1,194 @@
+# KDE/Plasma-specific configuration paths
+# These will be archived when migrating FROM KDE (Aurora) TO GNOME (Bluefin)
+# One path per line, relative to $HOME
+
+# Plasma Shell and core
+.config/plasma-org.kde.plasma.desktop-appletsrc
+.config/plasmarc
+.config/plasma-localerc
+.config/plasma-nm/
+.config/plasma-workspace/
+
+# KDE global settings
+.config/kdeglobals
+.config/kdebugrc
+.config/kded5rc
+.config/kwinrc
+.config/kwinrulesrc
+.config/kglobalshortcutsrc
+.config/khotkeysrc
+.config/klaunchrc
+.config/ksplashrc
+.config/ksmserverrc
+.config/kcminputrc
+.config/kxkbrc
+.config/krunnerrc
+.config/kaccessrc
+
+# KScreen (display configuration)
+.config/kscreen/
+.local/share/kscreen/
+
+# KDE Activities
+.config/kactivitymanagerdrc
+.config/kactivitymanagerd-statsrc
+.config/kactivitymanagerd-pluginsrc
+.config/kactivitymanagerd-switcher
+.local/share/kactivitymanagerd/
+
+# KDE System Settings
+.config/systemsettingsrc
+
+# KDE Window Manager (KWin)
+.config/kwin/
+.local/share/kwin/
+.config/kwinrulesrc
+.local/share/kwinrules/
+
+# KDE Style and Themes
+.config/breezerc
+.config/kvantumrc
+.config/kvantum/
+.local/share/color-schemes/
+.local/share/aurorae/
+.local/share/plasma/
+.local/share/plasma-desktop/
+.local/share/plasma-systemmonitor/
+.local/share/look-and-feel/
+
+# KDE Icons
+.local/share/icons/default/
+.config/iconthemerc
+
+# KDE Fonts
+.config/kcmfonts
+.local/share/kfontinst/
+.local/share/fonts/
+
+# KDE Cursor themes
+.config/cursor-theme
+
+# Dolphin (file manager)
+.config/dolphinrc
+.local/share/dolphin/
+.local/share/kxmlgui5/dolphin/
+
+# Konsole (terminal)
+.config/konsolerc
+.local/share/konsole/
+.config/konsolesshconfig
+
+# Kate (text editor)
+.config/katerc
+.config/katevirc
+.config/kate-externaltoolspluginrc
+.local/share/kate/
+.local/share/kxmlgui5/kate/
+
+# Spectacle (screenshots)
+.config/spectaclerc
+
+# Gwenview (image viewer)
+.config/gwenviewrc
+
+# Okular (document viewer)
+.config/okularpartrc
+.config/okular-generator-*
+
+# Ark (archive manager)
+.config/arkrc
+
+# KCalc (calculator)
+.config/kcalcrc
+
+# KInfoCenter
+.config/kinfocenterrc
+
+# KDE Connect
+.config/kdeconnect/
+.local/share/kdeconnect/
+
+# Klipper (clipboard)
+.config/klipperrc
+.local/share/klipper/
+
+# KWallet
+.config/kwalletrc
+.config/kwalletmanager5rc
+.local/share/kwallet/
+
+# KIO
+.config/kiorc
+.local/share/kioexec/
+
+# Baloo (file indexer)
+.config/baloofilerc
+.local/share/baloo/
+
+# KDE Network
+.config/bluedevilglobalrc
+.config/bluedevilrc
+
+# KDE Power Management
+.config/powermanagementprofilesrc
+
+# KDE Audio
+.config/kmixrc
+.config/kmix_ctrlrc
+
+# KDE Notifications
+.config/plasmanotifyrc
+.config/knotifyrc
+
+# KDE User feedback
+.config/PlasmaUserFeedback
+
+# KDE Emoji picker
+.config/krcrashhandlerrc
+
+# GTK integration settings created by KDE
+.config/gtkrc
+.config/gtkrc-2.0
+.config/gtk-3.0/
+.config/gtk-4.0/
+
+# KDE application menus
+.local/share/kservices5/
+.local/share/kservicetypes5/
+.local/share/kxmlgui5/
+
+# KDE sessions
+.local/share/kscreenlocker/
+
+# KDE file picker
+.config/kdeglobals
+
+# KDE desktop entries
+.local/share/applications/kde-*
+
+# KDE sddm-related (user theme preferences)
+.local/share/sddm/
+
+# Wayland-specific
+.config/kwinrulesrc
+
+# XDG user places (KDE modifies these)
+.local/share/user-places.xbel
+
+# Cache directories
+.cache/kwin/
+.cache/plasma/
+.cache/kioexec/
+.cache/kio/
+.cache/krunner/
+.cache/kded5/
+
+# KDE PIM (Personal Information Management)
+.config/kmail2rc
+.config/korganizerrc
+.config/kaddressbookrc
+.config/akonadi/
+.local/share/akonadi/
+.local/share/kmail2/
+.local/share/korganizer/
+.local/share/kaddressbook/

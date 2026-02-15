@@ -1,0 +1,132 @@
+# GNOME-specific configuration paths
+# These will be archived when migrating FROM GNOME (Bluefin) TO KDE (Aurora)
+# One path per line, relative to $HOME
+
+# GNOME Shell and core
+.config/gnome-shell/
+.config/gnome-control-center/
+.config/gnome-session/
+.config/gnome-desktop/
+
+# GNOME applications
+.config/nautilus/
+.config/gnome-terminal/
+.config/gnome-text-editor/
+.config/evolution/
+.config/gedit/
+.config/totem/
+.config/rhythmbox/
+.config/eog/
+.config/file-roller/
+
+# GNOME settings (dconf)
+.config/dconf/
+.local/share/dconf/
+
+# GNOME Keyring
+.local/share/keyrings/
+.config/gnome-keyring/
+
+# GSettings
+.local/share/gsettings-data-convert
+
+# GNOME Online Accounts
+.config/goa-*
+.local/share/goa-*
+
+# Mutter (window manager)
+.config/mutter/
+
+# GNOME Bluetooth
+.config/gnome-bluetooth/
+
+# GNOME Power Manager
+.config/gnome-power-manager/
+
+# GNOME Settings Daemon
+.config/gnome-settings-daemon/
+
+# GNOME Screensaver
+.config/gnome-screensaver/
+
+# GNOME Disk Utility
+.config/gnome-disk-utility/
+
+# GNOME Weather
+.config/gnome-weather/
+
+# GNOME Clocks
+.config/gnome-clocks/
+
+# GNOME Calendar
+.config/gnome-calendar/
+
+# GNOME Contacts
+.config/gnome-contacts/
+
+# GNOME Maps
+.config/gnome-maps/
+
+# GNOME Music
+.config/gnome-music/
+
+# GNOME Photos
+.config/gnome-photos/
+
+# GNOME Software
+.config/gnome-software/
+.local/share/gnome-software/
+
+# GVFS metadata
+.local/share/gvfs-metadata/
+
+# GNOME Backgrounds
+.local/share/gnome-background-properties/
+
+# GNOME Shell extensions (user-installed)
+.local/share/gnome-shell/
+.local/share/gnome-shell-extensions/
+
+# Evolution data
+.local/share/evolution/
+
+# Tracker (GNOME search indexer)
+.local/share/tracker/
+.cache/tracker/
+
+# GDM-related (usually system-level, but may have user data)
+.local/share/gdm/
+
+# GNOME user directories
+.config/user-dirs.dirs
+.config/user-dirs.locale
+
+# GNOME Theme settings (may conflict with KDE)
+.config/gtk-3.0/settings.ini
+.config/gtk-4.0/settings.ini
+.gtkrc-2.0
+
+# GNOME accessibility
+.config/at-spi2/
+
+# IBus (GNOME default input method)
+.config/ibus/
+.cache/ibus/
+
+# GNOME Remote Desktop
+.config/grd/
+
+# GNOME Network Manager (VPN configs, etc)
+.config/NetworkManager/
+
+# GNOME Fonts
+.config/fontconfig/
+
+# GNOME Cheese (camera)
+.config/cheese/
+
+# GNOME Sound Recorder
+.config/sound-recorder/
+
+# Logs and caches
+.local/share/gnome-logs/
