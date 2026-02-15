@@ -18,12 +18,7 @@ declare -A DESKTOP_MAP=(
     ["aurora"]="kde"
 )
 
-declare -A VARIANT_MAP=(
-    ["dx"]="developer edition"
-    ["nvidia"]="nvidia drivers"
-    ["nvidia-open"]="nvidia open drivers"
-    ["asus"]="asus hardware"
-)
+VARIANTS_CACHE_FILE=""
 
 get_bootc_status() {
     if [[ -n "${MOCK_BOOTC:-}" ]]; then
@@ -144,28 +139,54 @@ get_available_targets() {
     local target_family
     target_family=$(get_target_family)
     
-    local targets=()
+    local cache_file="$SCRIPT_DIR/../data/variants-cache.json"
     
-    targets+=("${target_family}-${current_variant:-standard}:${current_tag}")
-    
-    if [[ -n "$current_variant" && "$current_variant" != "dx" ]]; then
-        targets+=("${target_family}:${current_tag}")
+    if [[ -f "$cache_file" ]]; then
+        local cached_images
+        cached_images=$(jq -r ".$target_family.images[]" "$cache_file" 2>/dev/null)
+        
+        if [[ -n "$cached_images" ]]; then
+            local targets=()
+            
+            while IFS= read -r img; do
+                [[ -z "$img" ]] && continue
+                
+                if [[ -n "$current_variant" ]]; then
+                    if [[ "$img" == *"-$current_variant:"* || "$img" == *"$target_family:$current_tag" ]]; then
+                        targets+=("$img")
+                    fi
+                else
+                    if [[ "$img" == *":$current_tag" ]]; then
+                        targets+=("$img")
+                    fi
+                fi
+            done <<< "$cached_images"
+            
+            if [[ ${#targets[@]} -gt 0 ]]; then
+                printf '%s\n' "${targets[@]}" | sort -u
+                return 0
+            fi
+            
+            echo "$cached_images" | head -10
+            return 0
+        fi
     fi
     
+    local targets=()
+    
+    local variant_suffix=""
+    if [[ -n "$current_variant" ]]; then
+        variant_suffix="-$current_variant"
+    fi
+    
+    targets+=("${target_family}${variant_suffix}:${current_tag}")
+    
     if [[ "$current_tag" != "stable" ]]; then
-        targets+=("${target_family}-${current_variant:-standard}:stable")
+        targets+=("${target_family}${variant_suffix}:stable")
     fi
     
     if [[ "$current_tag" != "latest" ]]; then
-        targets+=("${target_family}-${current_variant:-standard}:latest")
-    fi
-    
-    if [[ -n "$current_variant" && "$current_variant" != "nvidia" ]]; then
-        targets+=("${target_family}-nvidia:${current_tag}")
-    fi
-    
-    if [[ -n "$current_variant" && "$current_variant" != "nvidia-open" ]]; then
-        targets+=("${target_family}-nvidia-open:${current_tag}")
+        targets+=("${target_family}${variant_suffix}:latest")
     fi
     
     printf '%s\n' "${targets[@]}" | sort -u

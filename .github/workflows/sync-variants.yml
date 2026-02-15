@@ -1,0 +1,61 @@
+name: Sync Variants
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/sync-variants.sh'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Sync variants
+        run: |
+          chmod +x scripts/sync-variants.sh
+          ./scripts/sync-variants.sh true > /dev/null
+          
+          echo "Cached variants:"
+          cat data/variants-cache.json
+      
+      - name: Check for changes
+        id: check
+        run: |
+          if git diff --quiet data/variants-cache.json; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Changes detected:"
+            git diff data/variants-cache.json
+          fi
+      
+      - name: Create PR if changed
+        if: steps.check.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          branch="sync/variants-$(date +%Y%m%d)"
+          git checkout -b "$branch"
+          git add data/variants-cache.json
+          git commit -m "chore: sync image variants from upstream"
+          git push origin "$branch"
+          
+          gh pr create \
+            --title "chore: update image variants" \
+            --body "Automated sync of available Bluefin/Aurora image variants from upstream Justfiles.\n\nVariants include flavors (main, nvidia-open) and tags (stable, latest, beta, gts)." \
+            --base main \
+            --label "automated"
+          
+          gh pr merge --auto --squash
