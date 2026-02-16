@@ -68,6 +68,61 @@ This will:
 4. Offer to swap desktop-specific flatpaks
 5. Ensure Flathub is configured
 
+### Phase 4: Optional Settings Migration (Experimental)
+
+After completing the main migration, you may optionally attempt to migrate
+desktop settings between environments using the settings migration script:
+
+```bash
+~/config-migration-backup-YYYYMMDD-HHMMSS/migrate-settings.sh --dry-run
+```
+
+#### What Settings Migration Can Transfer
+
+| Setting | Description | Notes |
+|---------|-------------|-------|
+| Font preferences | Default font selections | May need manual adjustment |
+| Wallpaper | Desktop background images | Path references may break |
+| Color schemes | Desktop color schemes | Format conversion may be imperfect |
+| Cursor themes | Mouse cursor themes | Usually works well |
+| Icon themes | User-custom icon themes | Default DE themes excluded |
+| GTK themes | GTK theme settings | May need adjustment |
+| Keychain/Wallet | Credentials | Often has compatibility issues |
+
+#### ⚠️ Important Warnings
+
+**This feature is experimental and may not work correctly in all cases.**
+
+- Settings migration between GNOME and KDE is inherently fragile
+- Some settings may not transfer properly or at all
+- Desktop-specific configurations may cause issues
+- **Always run with `--dry-run` first** to preview changes
+- Keep backups of important configurations
+
+#### Settings Migration Options
+
+| Option | Description |
+|--------|-------------|
+| `-h, --help` | Show help message |
+| `-v, --verbose` | Enable verbose output |
+| `-y, --yes` | Skip all confirmations |
+| `--dry-run` | Preview without making changes |
+| `--all` | Migrate all compatible settings |
+| `--backup-dir <dir>` | Specify backup directory |
+
+#### Example Usage
+
+```bash
+# Preview what would be migrated
+~/config-migration-backup-*/migrate-settings.sh --dry-run
+
+# Interactively select settings to migrate
+~/config-migration-backup-*/migrate-settings.sh
+
+# Migrate all compatible settings
+~/config-migration-backup-*/migrate-settings.sh --all
+```
+
 ## Command Line Options
 
 ### migrate-pre.sh

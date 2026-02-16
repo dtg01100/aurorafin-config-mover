@@ -15,6 +15,18 @@ show_settings_help() {
     cat << EOF
 ${BOLD}Bluefin-Aurora Migration - Settings Migrator${RESET}
 
+${BOLD}${RED}⚠️  EXPERIMENTAL FEATURE${RESET}
+
+    This script is ${BOLD}experimental${RESET} and settings migration between
+    desktop environments is inherently fragile. Some settings may not
+    transfer correctly or may cause unexpected behavior.
+
+    ${BOLD}Recommendations:${RESET}
+    • Always run with ${BOLD}--dry-run${RESET} first to preview changes
+    • Back up important data before proceeding
+    • Test migrated settings thoroughly after running
+    • Be prepared to manually adjust some settings
+
 ${BOLD}USAGE${RESET}
     $(basename "$0") [OPTIONS]
 
@@ -360,6 +372,46 @@ build_menu_options() {
     done
 
     printf '%s\n' "${options[@]}"
+}
+
+# Display experimental warning banner
+show_experimental_warning() {
+    echo ""
+    echo -e "${RED}╔═════════════════════════════════════════════════════════════════════╗${RESET}"
+    echo -e "${RED}║${RESET}                                                                     ${RED}║${RESET}"
+    echo -e "${RED}║${RESET}  ${BOLD}⚠️  EXPERIMENTAL FEATURE - USE AT YOUR OWN RISK${RESET}                   ${RED}║${RESET}"
+    echo -e "${RED}║${RESET}                                                                     ${RED}║${RESET}"
+    echo -e "${RED}║${RESET}  Settings migration between desktop environments is fragile and     ${RED}║${RESET}"
+    echo -e "${RED}║${RESET}  may not work correctly in all cases.                              ${RED}║${RESET}"
+    echo -e "${RED}║${RESET}                                                                     ${RED}║${RESET}"
+    echo -e "${RED}║${RESET}  • Some settings may not transfer properly                         ${RED}║${RESET}"
+    echo -e "${RED}║${RESET}  • Desktop-specific configurations may cause issues                ${RED}║${RESET}"
+    echo -e "${RED}║${RESET}  • Always test with --dry-run first                                ${RED}║${RESET}"
+    echo -e "${RED}║${RESET}  • Ensure you have backups of important data                       ${RED}║${RESET}"
+    echo -e "${RED}║${RESET}                                                                     ${RED}║${RESET}"
+    echo -e "${RED}║${RESET}  This script is provided as-is with no guarantees.                 ${RED}║${RESET}"
+    echo -e "${RED}║${RESET}                                                                     ${RED}║${RESET}"
+    echo -e "${RED}╚═════════════════════════════════════════════════════════════════════╝${RESET}"
+    echo ""
+}
+
+# Prompt for risk acceptance before migration
+confirm_risk_acceptance() {
+    # Skip confirmation in --yes mode
+    if [[ "$YES_MODE" == "true" ]]; then
+        return 0
+    fi
+    
+    echo -e "${BOLD}${YELLOW}⚠️  WARNING:${RESET} This is an experimental feature. Some settings may not"
+    echo "   transfer correctly between GNOME and KDE desktop environments."
+    echo ""
+    echo -en "${BOLD}   Do you understand and accept these risks?${RESET} [y/N]: "
+    read -r response
+    
+    case "$response" in
+        y|Y|yes|YES) return 0 ;;
+        *)           return 1 ;;
+    esac
 }
 
 # Helper function to extract font preferences from kdeglobals
@@ -1043,6 +1095,9 @@ main() {
     print_header "BLUEFIN ↔ AURORA SETTINGS MIGRATOR"
     echo "              Post-Migration Settings"
 
+    # Show experimental warning banner (always displayed)
+    show_experimental_warning
+
     check_dependencies
 
     detect_backup_dir
@@ -1051,6 +1106,12 @@ main() {
 
     if [[ "$DRY_RUN" == "true" ]]; then
         show_preview
+        exit 0
+    fi
+
+    # Require explicit risk acceptance before proceeding
+    if ! confirm_risk_acceptance; then
+        echo "Migration cancelled."
         exit 0
     fi
 

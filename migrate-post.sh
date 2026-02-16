@@ -203,6 +203,25 @@ print_summary() {
     echo "    - Review and install additional themes"
     echo "    - Configure keyboard shortcuts"
     echo ""
+    
+    # Optional settings migration notification
+    if [[ -n "${BACKUP_DIR:-}" ]] && [[ -f "$BACKUP_DIR/migrate-settings.sh" ]]; then
+        echo ""
+        echo -e "${YELLOW}┌─────────────────────────────────────────────────────────────────┐${RESET}"
+        echo -e "${YELLOW}│${RESET} ${BOLD}⚠️  OPTIONAL: Settings Migration${RESET}                                "
+        echo -e "${YELLOW}│${RESET}                                                                 "
+        echo -e "${YELLOW}│${RESET} An experimental settings migration script is available:         "
+        echo -e "${YELLOW}│${RESET}   $BACKUP_DIR/migrate-settings.sh"
+        echo -e "${YELLOW}│${RESET}                                                                 "
+        echo -e "${YELLOW}│${RESET} This can migrate: fonts, wallpaper, themes, icons, and more.   "
+        echo -e "${YELLOW}│${RESET}                                                                 "
+        echo -e "${YELLOW}│${RESET} ${RED}⚠️  WARNING:${RESET} This feature is ${BOLD}EXPERIMENTAL${RESET} and may not work     "
+        echo -e "${YELLOW}│${RESET}     correctly in all cases. Some settings may not transfer      "
+        echo -e "${YELLOW}│${RESET}     properly between GNOME and KDE.                             "
+        echo -e "${YELLOW}│${RESET}                                                                 "
+        echo -e "${YELLOW}│${RESET} Recommended: Run with ${BOLD}--dry-run${RESET} first to preview changes.       "
+        echo -e "${YELLOW}└─────────────────────────────────────────────────────────────────┘${RESET}"
+    fi
 }
 
 do_restore() {
