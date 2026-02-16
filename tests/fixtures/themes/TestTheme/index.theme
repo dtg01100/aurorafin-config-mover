@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=X-GNOME-Metatheme
+Name=TestTheme
+Comment=Test GTK Theme for Testing
+Encoding=UTF-8
+
+[X-GNOME-Metatheme]
+GtkTheme=TestTheme
+MetacityTheme=TestTheme
+IconTheme=Adwaita
+CursorTheme=Adwaita
+ButtonLayout=menu:minimize,maximize,close

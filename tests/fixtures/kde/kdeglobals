@@ -1,0 +1,21 @@
+[General]
+font=Noto Sans,10,-1,5,50,0,0,0,0,0
+menuFont=Noto Sans,10,-1,5,50,0,0,0,0,0
+toolBarFont=Noto Sans,10,-1,5,50,0,0,0,0,0
+desktopFont=Noto Sans,10,-1,5,50,0,0,0,0,0
+fixed=Noto Mono,10,-1,5,50,0,0,0,0,0
+smallestReadableFont=Noto Sans,8,-1,5,50,0,0,0,0,0
+
+[KDE]
+LookAndFeelPackage=org.kde.breeze.desktop
+SingleClick=true
+
+[Icons]
+Theme=breeze
+
+[WM]
+activeFont=Noto Sans,10,-1,5,75,0,0,0,0,0
+
+[Colors:Window]
+BackgroundNormal=239,240,241
+ForegroundNormal=49,54,56
