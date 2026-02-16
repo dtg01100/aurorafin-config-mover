@@ -1130,7 +1130,7 @@ main() {
                 # Call migration for each category in dry-run mode
                 # This will show what would be migrated without making changes
                 for category in "${SELECTED_SETTINGS[@]}"; do
-                    migrate_category "$category"
+                    migrate_category "$category" || true
                 done
                 
                 echo ""
