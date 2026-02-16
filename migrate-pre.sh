@@ -88,13 +88,15 @@ print_rebase_commands() {
     echo -e "  ${CYAN}sudo bootc switch $TARGET_IMAGE${RESET}"
     echo ""
     echo -e "${BOLD}Step 2: Verify signed image (after step 1 completes)${RESET}"
-    echo -e "  ${CYAN}sudo bootc switch --enforce-container-sigpolicy $TARGET_IMAGE${RESET}"
+    echo -e "  ${CYAN}sudo bootc switch --enforce-container-sigpolicy \\${RESET}"
+    echo -e "    ${CYAN}$TARGET_IMAGE${RESET}"
     echo ""
     echo -e "${BOLD}Step 3: Reboot${RESET}"
     echo -e "  ${CYAN}sudo reboot${RESET}"
     echo ""
     echo -e "${BOLD}Step 4: After reboot, run the post-migration script${RESET}"
-    echo -e "  ${CYAN}$BACKUP_DIR/migrate-post.sh${RESET}"
+    local display_path="${BACKUP_DIR/#$HOME\//\~}/migrate-post.sh"
+    echo -e "  ${CYAN}$display_path${RESET}"
     echo ""
 }
 

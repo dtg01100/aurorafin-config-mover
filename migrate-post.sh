@@ -206,12 +206,12 @@ print_summary() {
     
     # Optional settings migration notification
     if [[ -n "${BACKUP_DIR:-}" ]] && [[ -f "$BACKUP_DIR/migrate-settings.sh" ]]; then
+        local display_path="${BACKUP_DIR/#$HOME\//\~}/migrate-settings.sh"
         echo ""
         echo -e "${YELLOW}┌─────────────────────────────────────────────────────────────────┐${RESET}"
         echo -e "${YELLOW}│${RESET} ${BOLD}⚠️  OPTIONAL: Settings Migration${RESET}                                "
         echo -e "${YELLOW}│${RESET}                                                                 "
         echo -e "${YELLOW}│${RESET} An experimental settings migration script is available:         "
-        echo -e "${YELLOW}│${RESET}   $BACKUP_DIR/migrate-settings.sh"
         echo -e "${YELLOW}│${RESET}                                                                 "
         echo -e "${YELLOW}│${RESET} This can migrate: fonts, wallpaper, themes, icons, and more.   "
         echo -e "${YELLOW}│${RESET}                                                                 "
@@ -221,6 +221,8 @@ print_summary() {
         echo -e "${YELLOW}│${RESET}                                                                 "
         echo -e "${YELLOW}│${RESET} Recommended: Run with ${BOLD}--dry-run${RESET} first to preview changes.       "
         echo -e "${YELLOW}└─────────────────────────────────────────────────────────────────┘${RESET}"
+        echo ""
+        echo -e "  ${BOLD}Script location:${RESET} $display_path"
     fi
 }
 

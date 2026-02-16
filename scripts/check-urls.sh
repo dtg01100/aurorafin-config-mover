@@ -66,8 +66,10 @@ update_urls() {
     sed -i "s|^AURORA_BREWFILE_URL=.*|AURORA_BREWFILE_URL=\"$aurora_url\"|" "$FLATPAKS_FILE"
     
     echo "Updated URLs:"
-    echo "  Bluefin: $bluefin_url"
-    echo "  Aurora:  $aurora_url"
+    echo "  Bluefin Brewfile:"
+    echo "    $bluefin_url"
+    echo "  Aurora Brewfile:"
+    echo "    $aurora_url"
 }
 
 set_output() {

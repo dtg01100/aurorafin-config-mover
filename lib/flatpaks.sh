@@ -307,8 +307,14 @@ offer_flatpak_swap() {
     echo ""
     echo -e "${BOLD}Fetched flatpak lists from:${RESET}"
     case "$previous_de" in
-        gnome) echo "  Bluefin: $BLUEFIN_BREWFILE_URL" ;;
-        kde)   echo "  Aurora:  $AURORA_BREWFILE_URL" ;;
+        gnome)
+            echo "  Bluefin Brewfile:"
+            echo "    $BLUEFIN_BREWFILE_URL"
+            ;;
+        kde)
+            echo "  Aurora Brewfile:"
+            echo "    $AURORA_BREWFILE_URL"
+            ;;
     esac
     echo ""
     

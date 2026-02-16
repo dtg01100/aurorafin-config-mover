@@ -138,7 +138,8 @@ check_flathub_remote() {
     else
         print_warning "Flathub remote not found (system)"
         echo "  After rebase, you may need to add it:"
-        echo "    flatpak remote-add --if-not-exists --system flathub https://flathub.org/repo/flathub.flatpakrepo"
+        echo "    flatpak remote-add --if-not-exists --system flathub \\"
+        echo "      https://flathub.org/repo/flathub.flatpakrepo"
     fi
     
     if flatpak remotes --user 2>/dev/null | grep -q "flathub"; then
