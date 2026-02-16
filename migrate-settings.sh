@@ -1099,7 +1099,10 @@ main() {
     # Show experimental warning banner (always displayed)
     show_experimental_warning
 
-    check_dependencies
+    # Skip dependency check in dry-run mode (for testing)
+    if [[ "$DRY_RUN" != "true" ]]; then
+        check_dependencies
+    fi
 
     detect_backup_dir
 
