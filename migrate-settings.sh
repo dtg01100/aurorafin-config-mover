@@ -1105,8 +1105,31 @@ main() {
 
     info "Using backup directory: $BACKUP_DIR"
 
+    # Handle dry-run mode - show preview and exit unless --all is specified
     if [[ "$DRY_RUN" == "true" ]]; then
         show_preview
+        
+        # If --all is specified, also show what would be migrated
+        if [[ "$MIGRATE_ALL" == "true" ]]; then
+            local available_settings
+            available_settings=$(get_available_settings)
+            
+            SELECTED_SETTINGS=()
+            while IFS= read -r setting; do
+                [[ -n "$setting" ]] && SELECTED_SETTINGS+=("$setting")
+            done <<< "$available_settings"
+            
+            if [[ ${#SELECTED_SETTINGS[@]} -gt 0 ]]; then
+                echo ""
+                echo -e "${BOLD}DRY-RUN: Would migrate the following settings:${RESET}"
+                for setting in "${SELECTED_SETTINGS[@]}"; do
+                    echo "  - ${SETTING_CATEGORIES[$setting]:-$setting}"
+                done
+                echo ""
+                echo "No changes were made (dry-run mode)."
+            fi
+        fi
+        
         exit 0
     fi
 
