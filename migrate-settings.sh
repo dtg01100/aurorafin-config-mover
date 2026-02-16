@@ -442,76 +442,126 @@ extract_dconf_settings() {
     
     # Desktop-agnostic GNOME settings to migrate
     # These are settings that work across desktop environments
+    # Format: "section:key" where section is the dconf path without leading slash
     local dconf_keys=(
-        "/org/gnome/desktop/interface/font-name:"
-        "/org/gnome/desktop/interface/monospace-font-name:"
-        "/org/gnome/desktop/interface/gtk-theme:"
-        "/org/gnome/desktop/interface/icon-theme:"
-        "/org/gnome/desktop/interface/cursor-theme:"
-        "/org/gnome/desktop/interface/cursor-size:"
-        "/org/gnome/desktop/interface/color-scheme:"
-        "/org/gnome/desktop/interface/show-symbolic-icons:"
-        "/org/gnome/desktop/interface/clock-format:"
-        "/org/gnome/desktop/interface/clock-show-weekday:"
-        "/org/gnome/desktop/background/picture-uri:"
-        "/org/gnome/desktop/background/picture-uri-dark:"
-        "/org/gnome/desktop/background/picture-options:"
-        "/org/gnome/desktop/notification:/"
-        "/org/gnome/desktop/sound/:"
+        "org/gnome/desktop/interface:font-name"
+        "org/gnome/desktop/interface:monospace-font-name"
+        "org/gnome/desktop/interface:gtk-theme"
+        "org/gnome/desktop/interface:icon-theme"
+        "org/gnome/desktop/interface:cursor-theme"
+        "org/gnome/desktop/interface:cursor-size"
+        "org/gnome/desktop/interface:color-scheme"
+        "org/gnome/desktop/interface:show-symbolic-icons"
+        "org/gnome/desktop/interface:clock-format"
+        "org/gnome/desktop/interface:clock-show-weekday"
+        "org/gnome/desktop/background:picture-uri"
+        "org/gnome/desktop/background:picture-uri-dark"
+        "org/gnome/desktop/background:picture-options"
     )
     
     local extracted_settings=""
     local found_settings=0
+    local temp_dir=""
+    local cleanup_temp=false
     
-    # Use dconf dump if dconf is available, otherwise parse the file directly
-    # NOTE: This implementation uses the 'strings' command to extract text from the
-    # binary dconf database. This is a fallback method that may not work reliably
-    # for all dconf database formats. For best results, ensure dconf is available.
+    # Use dconf dump if dconf is available - this is the preferred method
     if check_dconf_available; then
-        # Try to dump the backed-up dconf database
-        # We need to use dconf with the backup file directly
-        local temp_dir
-        temp_dir=$(mktemp -d)
+        debug "Using dconf dump to extract settings from backup"
         
-        # Copy the backup to temp location and read it
-        if cp "$dconf_db" "$temp_dir/user" 2>/dev/null; then
-            # Try to read settings from the backup database
-            # dconf requires a proper database, so we parse the binary format minimally
-            # For simplicity, we'll use the text representation if available
-            
-            # Extract text from the dconf database using strings (fallback)
-            # This approach has limitations with binary formats but provides
-            # basic functionality when dconf tools are not fully compatible
-            local dconf_text
-            dconf_text=$(strings "$dconf_db" 2>/dev/null | head -500) || true
-            
-            if [[ -n "$dconf_text" ]]; then
-                for key in "${dconf_keys[@]}"; do
-                    # Remove trailing colon for matching
-                    local key_pattern="${key%:}"
-                    local value
-                    
-                    # Look for the key in the dconf dump output
-                    value=$(echo "$dconf_text" | grep -E "^$key_pattern" | head -1)
-                    
-                    if [[ -n "$value" ]]; then
-                        extracted_settings+="$value
-"
-                        ((found_settings++)) || true
-                        debug "Found dconf setting: $value"
-                    fi
-                done
+        # Create a temporary directory with a custom dconf profile
+        temp_dir=$(mktemp -d)
+        cleanup_temp=true
+        
+        # Create the dconf profile directory structure
+        # dconf looks for databases in $XDG_CONFIG_HOME/dconf/ or ~/.config/dconf/
+        # We set XDG_CONFIG_HOME to our temp directory so dconf finds the backup
+        local profile_dir="$temp_dir/dconf"
+        mkdir -p "$profile_dir"
+        
+        # Copy the backup database to the profile directory
+        if cp "$dconf_db" "$profile_dir/user" 2>/dev/null; then
+            # Run dconf dump with XDG_CONFIG_HOME pointing to our temp directory
+            # This tells dconf to look for the database at $temp_dir/dconf/user
+            local dconf_output
+            if XDG_CONFIG_HOME="$temp_dir" dconf dump / > "$temp_dir/dump" 2>/dev/null; then
+                dconf_output=$(cat "$temp_dir/dump")
+                debug "Successfully dumped dconf database"
+            else
+                debug "dconf dump failed, falling back to strings method"
+                dconf_output=""
             fi
             
-            rm -rf "$temp_dir"
+            # Parse the dconf dump output (INI-like format)
+            # Format: [section] followed by key=value lines
+            if [[ -n "$dconf_output" ]]; then
+                local current_section=""
+                while IFS= read -r line; do
+                    # Check for section header [org/gnome/desktop/interface]
+                    if [[ "$line" =~ ^\[([^\]]+)\]$ ]]; then
+                        current_section="${BASH_REMATCH[1]}"
+                        debug "Found section: $current_section"
+                    # Check for key=value line (includes underscores in key names)
+                    elif [[ "$line" =~ ^([a-zA-Z0-9_-]+)=(.*)$ ]]; then
+                        local key="${BASH_REMATCH[1]}"
+                        local value="${BASH_REMATCH[2]}"
+                        
+                        # Build the full dconf path
+                        local full_key="$current_section:$key"
+                        
+                        # Check if this key is in our list of keys to migrate
+                        for target_key in "${dconf_keys[@]}"; do
+                            if [[ "$full_key" == "$target_key" ]]; then
+                                # Convert to dconf write format: /path/to/key:value
+                                local dconf_path="/${current_section//\.//}/$key"
+                                local setting_line="$dconf_path:$value"
+                                extracted_settings+="$setting_line
+"
+                                ((found_settings++)) || true
+                                debug "Found dconf setting: $setting_line"
+                                break
+                            fi
+                        done
+                    fi
+                done <<< "$dconf_output"
+            fi
+        else
+            debug "Failed to copy dconf database to temp directory"
         fi
-    else
-        # dconf not available - try to parse the database file directly
+    fi
+    
+    # Fallback to strings method if dconf dump didn't work or dconf not available
+    if [[ $found_settings -eq 0 ]]; then
+        if ! check_dconf_available; then
+            warn "dconf command not available, using fallback 'strings' method"
+            warn "This method may not reliably extract all settings"
+        else
+            debug "dconf dump found no settings, trying strings fallback"
+        fi
+        
+        # Parse the database file directly using strings
+        # This is a fallback that may not work reliably for all dconf formats
         local dconf_text
         dconf_text=$(strings "$dconf_db" 2>/dev/null | head -500) || true
         
         if [[ -n "$dconf_text" ]]; then
-            for key in "${dconf_keys[@]}"; do
+            # Old format keys for strings fallback (with trailing colon)
+            local old_format_keys=(
+                "/org/gnome/desktop/interface/font-name:"
+                "/org/gnome/desktop/interface/monospace-font-name:"
+                "/org/gnome/desktop/interface/gtk-theme:"
+                "/org/gnome/desktop/interface/icon-theme:"
+                "/org/gnome/desktop/interface/cursor-theme:"
+                "/org/gnome/desktop/interface/cursor-size:"
+                "/org/gnome/desktop/interface/color-scheme:"
+                "/org/gnome/desktop/interface/show-symbolic-icons:"
+                "/org/gnome/desktop/interface/clock-format:"
+                "/org/gnome/desktop/interface/clock-show-weekday:"
+                "/org/gnome/desktop/background/picture-uri:"
+                "/org/gnome/desktop/background/picture-uri-dark:"
+                "/org/gnome/desktop/background/picture-options:"
+            )
+            
+            for key in "${old_format_keys[@]}"; do
                 # Remove trailing colon for matching
                 local key_pattern="${key%:}"
                 local value
@@ -522,10 +572,15 @@ extract_dconf_settings() {
                     extracted_settings+="$value
 "
                     ((found_settings++)) || true
-                    debug "Found dconf setting: $value"
+                    debug "Found dconf setting (strings fallback): $value"
                 fi
             done
         fi
+    fi
+    
+    # Clean up temporary directory
+    if [[ "$cleanup_temp" == "true" && -n "$temp_dir" && -d "$temp_dir" ]]; then
+        rm -rf "$temp_dir"
     fi
     
     if [[ $found_settings -gt 0 ]]; then
