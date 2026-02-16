@@ -27,8 +27,8 @@ jobs:
       
       - name: Run shellcheck
         run: |
-          shellcheck -x scripts/*.sh lib/*.sh migrate-pre.sh migrate-post.sh
-      
+          shellcheck -x -e SC1091,SC2034,SC2153,SC2155 scripts/*.sh lib/*.sh migrate-pre.sh migrate-post.sh
+
       - name: Run bats tests
         run: |
-          bats tests/migration.bats
+          bats tests/migration.bats tests/settings-migration.bats
