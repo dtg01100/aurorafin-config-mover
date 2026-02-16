@@ -1105,11 +1105,11 @@ main() {
 
     info "Using backup directory: $BACKUP_DIR"
 
-    # Handle dry-run mode - show preview and exit unless --all is specified
+    # Handle dry-run mode - show preview and also call migration functions to show what would happen
     if [[ "$DRY_RUN" == "true" ]]; then
         show_preview
         
-        # If --all is specified, also show what would be migrated
+        # If --all is specified, also show what would be migrated for each category
         if [[ "$MIGRATE_ALL" == "true" ]]; then
             local available_settings
             available_settings=$(get_available_settings)
@@ -1121,12 +1121,17 @@ main() {
             
             if [[ ${#SELECTED_SETTINGS[@]} -gt 0 ]]; then
                 echo ""
-                echo -e "${BOLD}DRY-RUN: Would migrate the following settings:${RESET}"
-                for setting in "${SELECTED_SETTINGS[@]}"; do
-                    echo "  - ${SETTING_CATEGORIES[$setting]:-$setting}"
-                done
+                echo -e "${BOLD}DRY-RUN: Processing settings migration...${RESET}"
                 echo ""
-                echo "No changes were made (dry-run mode)."
+                
+                # Call migration for each category in dry-run mode
+                # This will show what would be migrated without making changes
+                for category in "${SELECTED_SETTINGS[@]}"; do
+                    migrate_category "$category"
+                done
+                
+                echo ""
+                echo -e "${YELLOW}Dry-run complete. No changes were made.${RESET}"
             fi
         fi
         
