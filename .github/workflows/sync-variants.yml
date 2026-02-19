@@ -50,6 +50,8 @@ jobs:
           git checkout -b "$branch"
           git add data/variants-cache.json
           git commit -m "chore: sync image variants from upstream"
+          # Ensure branch is up to date; fetch and reset to remote if needed before pushing
+          git fetch origin "$branch" || true
           git push --force-with-lease origin "$branch"
           
           if ! gh pr create \
