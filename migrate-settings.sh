@@ -1110,6 +1110,8 @@ main() {
 
     # Handle dry-run mode - show preview and also call migration functions to show what would happen
     if [[ "$DRY_RUN" == "true" ]]; then
+        # Disable exiting on first error in dry-run so previews do not cause non-zero exit
+        set +e
         show_preview
         
         # If --all is specified, also show what would be migrated for each category
