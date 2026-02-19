@@ -52,10 +52,12 @@ jobs:
           git commit -m "chore: sync image variants from upstream"
           git push origin "$branch"
           
-          gh pr create \
+          if ! gh pr create \
             --title "chore: update image variants" \
             --body "Automated sync of available Bluefin/Aurora image variants from upstream Justfiles.\n\nVariants include flavors (main, nvidia-open) and tags (stable, latest, beta, gts)." \
             --base main \
-            --label "automated"
-          
-          gh pr merge --auto --squash
+            --label "automated"; then
+            echo "Warning: unable to create pull request (likely permissions); pushed branch $branch to origin"
+          else
+            gh pr merge --auto --squash || echo "Warning: unable to auto-merge PR (likely permissions)"
+          fi
