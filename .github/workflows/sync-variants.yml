@@ -50,7 +50,7 @@ jobs:
           git checkout -b "$branch"
           git add data/variants-cache.json
           git commit -m "chore: sync image variants from upstream"
-          git push origin "$branch"
+          git push --force-with-lease origin "$branch"
           
           if ! gh pr create \
             --title "chore: update image variants" \
