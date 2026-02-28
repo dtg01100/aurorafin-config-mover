@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-02-15T22:06:20-05:00",
+  "timestamp": "2026-02-28T06:03:51+00:00",
   "bluefin": {
     "flavors": ["main","nvidia-open"],
     "tags": ["gts","stable","latest","beta"],
-    "images": ["ghcr.io/ublue-os/bluefin-dx:beta","ghcr.io/ublue-os/bluefin-dx:gts","ghcr.io/ublue-os/bluefin-dx:latest","ghcr.io/ublue-os/bluefin-dx-nvidia-open:beta","ghcr.io/ublue-os/bluefin-dx-nvidia-open:gts","ghcr.io/ublue-os/bluefin-dx-nvidia-open:latest","ghcr.io/ublue-os/bluefin-dx-nvidia-open:stable","ghcr.io/ublue-os/bluefin-dx:stable"]
+    "images": ["ghcr.io/ublue-os/bluefin-dx-nvidia-open:beta","ghcr.io/ublue-os/bluefin-dx-nvidia-open:gts","ghcr.io/ublue-os/bluefin-dx-nvidia-open:latest","ghcr.io/ublue-os/bluefin-dx-nvidia-open:stable","ghcr.io/ublue-os/bluefin-dx:beta","ghcr.io/ublue-os/bluefin-dx:gts","ghcr.io/ublue-os/bluefin-dx:latest","ghcr.io/ublue-os/bluefin-dx:stable"]
   },
   "aurora": {
     "flavors": ["main","nvidia-open"],
     "tags": ["stable","latest","beta"],
-    "images": ["ghcr.io/ublue-os/aurora-dx:beta","ghcr.io/ublue-os/aurora-dx:latest","ghcr.io/ublue-os/aurora-dx-nvidia-open:beta","ghcr.io/ublue-os/aurora-dx-nvidia-open:latest","ghcr.io/ublue-os/aurora-dx-nvidia-open:stable","ghcr.io/ublue-os/aurora-dx:stable"]
+    "images": ["ghcr.io/ublue-os/aurora-dx-nvidia-open:beta","ghcr.io/ublue-os/aurora-dx-nvidia-open:latest","ghcr.io/ublue-os/aurora-dx-nvidia-open:stable","ghcr.io/ublue-os/aurora-dx:beta","ghcr.io/ublue-os/aurora-dx:latest","ghcr.io/ublue-os/aurora-dx:stable"]
   }
 }
